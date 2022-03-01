@@ -13,8 +13,7 @@ grouppeople::join('groupss','groupss.id','=','grouppeoples.group_id')->where('gr
 <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="">
-<title>ChatApp</title>
-<link rel="icon" type="image/x-icon" href="/assets/img/chat.png">
+<title>Private Chat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
   integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -28,24 +27,24 @@ grouppeople::join('groupss','groupss.id','=','grouppeoples.group_id')->where('gr
     display: inline-block;
     padding: 6px 12px;
     cursor: pointer;
-}
-.doc
-{
-  display: none;
-}
-.text-truncate img, .text-truncate video, .text-truncate audio
-{
-  width: 20px;
-  height: 20px;
-}
-input.largerCheckbox {
-  width: 20px;
-  height: 20px;
   }
-  
+
+  .doc {
+    display: none;
+  }
+
+  .text-truncate img,
+  .text-truncate video,
+  .text-truncate audio {
+    width: 20px;
+    height: 20px;
+  }
 </style>
+
 <body>
-  @include('sweetalert::alert')
+<div id="toast{{Session::get('user')}}" style="z-index: 20" class="position-fixed end-0">
+
+</div>
   @if($errors->any())
   <div class="alert alert-danger">
     <p><strong>Opps Something went wrong</strong></p>
@@ -70,15 +69,12 @@ input.largerCheckbox {
         <img src="assets/img/chat.png" alt="" style="width: 40px;">
       </a>
       <div class="nav flex-md-column nav-pills flex-grow-1" role="tablist" aria-orientation="vertical">
-          <a href="/home"  class="mb-xl-3 mb-md-2 nav-link active">
-          <img src="/storage/images/{{ $profile->image }}" class="avatar sm rounded-circle" alt="user avatar" />
-        </a>
         <a class="mt-xl-3 mt-md-2 nav-link active" data-toggle="pill" href="#nav-tab-chat" role="tab"><i
             class="fas fa-comments"></i></a>
         <a class="mt-xl-3 mt-md-2 nav-link" data-toggle="pill" href="#nav-tab-contact" role="tab"><i
             class="fas fa-address-book"></i></a>
-        <a class="mt-xl-3 mt-md-2 nav-link" href="/settings"><i class="fas fa-cog"></i></a>
-        <a class="mt-xl-3 mt-md-2 nav-link"href="{{ route('logout') }}" onclick="return confirm('Are you sure to logout?');"><i
+        <a class="mt-xl-3 mt-md-2 nav-link" href="/settings" role="tab"><i class="fas fa-cog"></i></a>
+        <a class="mt-xl-3 mt-md-2 nav-link" href="{{ route('logout') }}" role="tab"><i
             class="fas fa-sign-out-alt"></i></a>
         <a class="mt-xl-3 mt-md-2 nav-link light-dark-toggle" href="javascript:void(0);">
           <i class="zmdi zmdi-brightness-2"></i>
@@ -137,26 +133,26 @@ input.largerCheckbox {
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="mb-0 text-primary text-uppercase">Chat</h4>
             <div>
-              <a class="btn btn-dark" data-toggle="pill" href="#nav-tab-group" role="tab">New Group</a>
+              <a class="btn btn-dark" data-toggle="pill" href="#nav-tab-contact" role="tab">New Chat</a>
             </div>
           </div>
 
-         <div class="form-group input-group-lg search mb-3">
+          <div class="form-group input-group-lg search mb-3">
             <i class="zmdi zmdi-search"></i>
-            <input id="myInput" onkeyup="myFunction()" type="text" class="form-control" placeholder="Search...">
+            <input type="text" class="form-control" placeholder="Search...">
           </div>
 
-          <ul class="chat-list" id="myUL">
+          <ul class="chat-list">
             <li class="header d-flex justify-content-between ps-3 pe-3 mb-1">
               <span>RECENT CHATS</span>
               <div class="dropdown">
-                <a class="btn btn-link px-1 py-0 border-0 text-muted dropdown-toggle"  role="button"
+                <a class="btn btn-link px-1 py-0 border-0 text-muted dropdown-toggle" role="button"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i
                     class="zmdi zmdi-filter-list"></i></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <a class="dropdown-item" >Action</a>
-                  <a class="dropdown-item" >Another action</a>
-                  <a class="dropdown-item" >Something else here</a>
+                  <a class="dropdown-item">Action</a>
+                  <a class="dropdown-item">Another action</a>
+                  <a class="dropdown-item">Something else here</a>
                 </div>
               </div>
             </li>
@@ -168,10 +164,10 @@ input.largerCheckbox {
             @if($da->id != Session::get('user_id') && $recent)
             <li id={{$da->id}} @if($da->status == 1) class="online card" @else class="away card" @endif>
               <div class="hover_action">
+                <button type="button" class="btn btn-link text-info"><i class="fas fa-eye"></i></button>
                 <button type="button" class="btn btn-link text-warning"><i class="fas fa-star"></i></button>
                 <button type="button" class="btn btn-link text-danger"><i class="fas fa-trash"></i></button>
               </div>
-              
               <a onclick="select('{{$da->name}}','{{$da->id}}')" class="card border-0">
                 <div class="card-body">
                   <div class="media">
@@ -203,20 +199,22 @@ input.largerCheckbox {
                           \Carbon\Carbon::parse($recent->created_at)->format('d-m-Y | h:i:s A')}}</p>
                         @endif
                       </div>
-                      
-                      @if(preg_match("/<img/i", $recent->message))
+
+                      @if(preg_match("/<img /i", $recent->message))
                       <div class="text-truncate"><img src="/icons/img.png" alt="image" srcset=""></div>
                       @endif
-                      @if(preg_match("/<video/i", $recent->message))
-                      <div class="text-truncate"><img src="/icons/video.png" alt="video" srcset=""></div>
-                      @endif
-                      @if(preg_match("/<audio/i", $recent->message))
-                      <div class="text-truncate"><img src="/icons/audio.png" alt="audio" srcset=""></div>
-                      @endif
-                      @if(preg_match("(</audio>|</video>|<img)", $recent->message) == 0)
-                      <div class="text-truncate">{!! $recent->message !!}</div>
-                      @endif
-                    
+                      @if(preg_match("/<video /i", $recent->message))
+                        <div class="text-truncate"><img src="/icons/video.png" alt="video" srcset=""></div>
+                        @endif
+                        @if(preg_match("/<audio /i", $recent->message))
+                          <div class="text-truncate"><img src="/icons/audio.png" alt="audio" srcset=""></div>
+                          @endif
+                          @if(preg_match("(
+                        </audio>|
+                      </video>|<img)", $recent->message) == 0)
+                        <div class="text-truncate">{!! $recent->message !!}</div>
+                        @endif
+
                     </div>
                   </div>
                 </div>
@@ -273,132 +271,8 @@ input.largerCheckbox {
             @endforeach
           </ul>
         </div>
-        <div class="tab-pane fade" id="nav-tab-group" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-              <h4 class="mb-0 text-primary text-uppercase">Add Contacts to Group</h4>
-              <div>
-                  <!-- <button class="btn btn-dark" type="button" data-toggle="modal" data-target="#InviteFriends">Invite Friends</button> -->
-              </div>
-          </div>
-      
-          <div class="form-group input-group-lg search mb-3">
-              <i class="zmdi zmdi-search"></i>
-              <input type="text" id="myInput1" onkeyup="myFunction1()" class="form-control" placeholder="Search...">
-          </div>
-          <form action="groupinsert" method="post">
-            @csrf
-          <div class="container">
-            <div class="row">
-             
-                <div class="col-4 mt-3 mb-3">
-                     <p class="fw-bold m-0"><span style="vertical-align: -8px;">Group Name:</span></p>
-                </div>
-                <div class="col-8 mt-3 mb-3">
-                     <input type="text" name="gname" class="form-control" placeholder="Enter Group Name">
-                </div>
-                
-            </div>
-        </div>
-          <ul class="chat-list" id="myUL1">
-               @foreach ($data as $da)
-           
-            <li>
-            <div class="hover_action" style="visibility:visible; top:25px;">
-                <input type="checkbox" class="largerCheckbox" name="{{$da->id}}"  >
-            </div>
-            <a  class="card">
-            <div class="card-body">
-                <div class="media">
-                    <div class="avatar me-3">
-                        <img class="newavatar rounded-circle" src="/storage/images/{{ $da->image }}" alt="avatar">
-                    </div>
-                        <div class="d-flex align-items-center">
-                            <h6 class="text-truncate mb-0 me-auto fw-bold">{{ $da->name }}</h6>
-                        </div>
-                </div>
-            </div>
-        </a>
-    </li>
-   
-    @endforeach
-     <div class="container">
-        <div class="row">
-            <div class="col text-center">
-                <button class="btn btn-primary mt-3">Add to Group</button>
-            </div>
-        </div>
-    </div>
-  </form>
-      </ul>
-      </div>
-        <div class="tab-pane fade" id="nav-tab-contact" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0 text-primary text-uppercase">Contacts</h4>
-        <div>
-            <!-- <button class="btn btn-dark" type="button" data-toggle="modal" data-target="#InviteFriends">Invite Friends</button> -->
-        </div>
-    </div>
-
-    <div class="form-group input-group-lg search mb-3">
-        <i class="zmdi zmdi-search"></i>
-        <input type="text" class="form-control" placeholder="Search..." id="myInput2" onkeyup="myFunction2()">
-        
-    </div>
-
-    <ul class="chat-list" id="myUL2">
-          @foreach ($data as $da)
-           
-        <li>
-            <div class="hover_action">
-                <button type="button" class="btn btn-link text-info" data-bs-toggle="modal" data-bs-target="#{{ str_replace(' ','-',$da->name ) }}{{ $da->id }}"><i class="fas fa-eye"></i></button>
-                <button type="button" class="btn btn-link text-warning"><i class="fas fa-star"></i></button>
-                <button type="button" class="btn btn-link text-danger"><i class="fas fa-trash"></i></button>
-            </div>
-            <a href="/select/{{$da->id}}" class="card">
-            <div class="card-body">
-                <div class="media">
-                    <div class="avatar me-3">
-                        <img class="newavatar rounded-circle" src="/storage/images/{{ $da->image }}" alt="avatar">
-                    </div>
-                    <div class="media-body overflow-hidden">
-                        <div class="d-flex align-items-center mb-1">
-                            <h6 class="text-truncate mb-0 me-auto fw-bold">{{ $da->name }}</h6>
-                        </div>
-                        <div class="text-truncate">Last Seen Now </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </li>
-    <div class="modal fade" id="{{ str_replace(' ','-',$da->name ) }}{{ $da->id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Contact Info</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-           <div class="container">
-             <div class="row">
-               <img src="/storage/images/{{ $da->image }}" class="img-fluid img-thumbnail">
-               <h4 class="text-center mt-5">{{ $da->name }}</h4>
-               <h6 class="text-center"><a href="mailto:{{ $da->email }}">{{ $da->email }}</a></h6>
-             </div>
-           </div>
-          </div>
-          {{-- <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Save changes</button>
-          </div> --}}
-        </div>
       </div>
     </div>
-    @endforeach
-    </ul>
-</div>
-      </div>
-    </div>
-      
     @include("sidebar")
     <div class="main px-lg-4 px-3">
       @isset($user)
@@ -432,31 +306,32 @@ input.largerCheckbox {
                     <div class="d-flex align-items-center mb-1">
                       <h6 class="text-truncate mb-0 me-auto fw-bold">{{$user->name}}</h6>
                     </div>
-                    <div id="ch{{$user->id}}" class="text-truncate">@if($user->status == 1) online @else offline @endif</div>
+                    <div id="ch{{$user->id}}" class="text-truncate">@if($user->status == 1) online @else offline @endif
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div class="col-6 col-xl-8 text-end">
+              {{-- <div class="col-6 col-xl-8 text-end">
                 <ul class="nav justify-content-end">
                   <li class="nav-item list-inline-item d-none d-md-block me-3">
-                    <a  class="nav-link text-muted px-3" data-toggle="collapse" data-target="#chat-search-div"
+                    <a class="nav-link text-muted px-3" data-toggle="collapse" data-target="#chat-search-div"
                       aria-expanded="true" title="Search this chat">
                       <i class="fas fa-search fa-lg"></i>
                     </a>
                   </li>
-                  {{-- <li class="nav-item list-inline-item d-none d-sm-block me-3">
-                    <a  class="nav-link text-muted px-3" title="Video Call">
+                  <li class="nav-item list-inline-item d-none d-sm-block me-3">
+                    <a class="nav-link text-muted px-3" title="Video Call">
                       <i class="fas fa-video fa-lg"></i>
                     </a>
                   </li>
                   <li class="nav-item list-inline-item d-none d-sm-block me-3">
-                    <a  class="nav-link text-muted px-3" title="Voice Call">
+                    <a class="nav-link text-muted px-3" title="Voice Call">
                       <i class="fas fa-phone-alt fa-lg"></i>
                     </a>
-                  </li> --}}
+                  </li>
                 </ul>
-              </div>
+              </div> --}}
             </div>
           </div>
         </div>
@@ -482,12 +357,12 @@ input.largerCheckbox {
                 <div class="message-body">
                   <div class="message-row d-flex align-items-center justify-content-end">
                     <div class="dropdown">
-                      <a class="text-muted me-1 p-2 text-muted"  data-toggle="dropdown" aria-haspopup="true"
+                      <a class="text-muted me-1 p-2 text-muted" data-toggle="dropdown" aria-haspopup="true"
                         aria-expanded="false">
                         <i class="fas fa-ellipsis-v"></i>
                       </a>
                       <div class="dropdown-menu dropdown-menu-right text-center">
-                        <a class="dropdown-item" >Share <i class="fas fa-share"></i></a>
+                        <a class="dropdown-item">Share <i class="fas fa-share"></i></a>
                         <a class="dropdown-item" onclick="delmsg({{$d->id}})">Delete <i class="fas fa-trash"></i></a>
                       </div>
                     </div>
@@ -495,7 +370,8 @@ input.largerCheckbox {
                     </div>
                   </div>
                   <span class="date-time text-muted">{{ \Carbon\Carbon::parse($d->created_at)->format('d-m-Y | h:i:s
-                    A')}} <i class="fas @if($d->seen == 1) fa-check-double @else fa-check @endif  text-primary px-1"></i></span>
+                    A')}} <i
+                      class="fas @if($d->seen == 1) fa-check-double @else fa-check @endif  text-primary"></i></span>
                 </div>
               </li>
               @endif
@@ -509,13 +385,14 @@ input.largerCheckbox {
                       {!! $d->message !!}
                     </div>
                     <div class="dropdown">
-                      <a class="text-muted ms-1 p-2 text-muted"  data-toggle="dropdown" aria-haspopup="true"
+                      <a class="text-muted ms-1 p-2 text-muted" data-toggle="dropdown" aria-haspopup="true"
                         aria-expanded="false">
                         <i class="fas fa-ellipsis-v"></i>
                       </a>
                       <div class="dropdown-menu dropdown-menu-right text-center">
-                        <a class="dropdown-item" >Share <i class="fas fa-share"></i></a>
-                        {{-- <a class="dropdown-item" onclick="delmsg({{$d->id}})">Delete <i class="fas fa-trash"></i></a> --}}
+                        <a class="dropdown-item">Share <i class="fas fa-share"></i></a>
+                        {{-- <a class="dropdown-item" onclick="delmsg({{$d->id}})">Delete <i
+                            class="fas fa-trash"></i></a> --}}
                       </div>
                     </div>
 
@@ -538,10 +415,13 @@ input.largerCheckbox {
                     <input type="hidden" id="id" name="id" value="{{Session::get('user_id')}}">
                     <input type="hidden" id="rev" name="rev" value="{{$user->id}}">
                     <input type="hidden" id="name" name="name" value="{{Session::get('user')}}">
-                    <input type="hidden" id="reciver" name="reciver" value="{{$user->name}}"> 
-                    <input type="hidden" id="dd" class="{{Session::get('user_id')}}{{$user->name}}" name="dd" value="{{$double}}"> 
-                    <input autocomplete="off" type="text" onblur="online({{Session::get('user_id')}})" onclick="typing({{Session::get('user_id')}})" id="msg" name="msg" class="form-control border-0 pl-0 text-muted"
-                      style="font-size:18px;" placeholder="Type your message...">
+                    <input type="hidden" id="reciver" name="reciver" value="{{$user->name}}">
+                    <input type="hidden" id="dd" class="{{Session::get('user_id')}}{{$user->name}}" name="dd"
+                      value="{{$double}}">
+                    <input autocomplete="off" type="text" onblur="online({{Session::get('user_id')}})"
+                      onclick="typing({{Session::get('user_id')}})" id="msg" name="msg"
+                      class="form-control border-0 pl-0 text-muted" style="font-size:18px;"
+                      placeholder="Type your message...">
                     <div class="input-group-append">
                       <span class="input-group-text border-0">
                         <button class="btn btn-sm btn-link text-muted" data-toggle="tooltip" title="Emoji"
@@ -551,11 +431,11 @@ input.largerCheckbox {
                     <div class="input-group-append">
                       <span class="input-group-text border-0">
                         <label class="custom-file-upload text-muted">
-                          <input type="file" name="file" class="doc"/>
+                          <input type="file" name="file" class="doc" />
                           <i class="fas fa-paperclip font-22"></i>
-                      </label>
-                        
-                     
+                        </label>
+
+
                       </span>
                     </div>
                     <div class="input-group-append">
@@ -584,11 +464,11 @@ input.largerCheckbox {
                     <div class="input-group-append">
                       <span class="input-group-text border-0">
                         <label class="custom-file-upload  text-muted">
-                          <input type="file" name="doc" class="doc"/>
+                          <input type="file" name="doc" class="doc" />
                           <i class="fas fa-paperclip font-22"></i>
-                      </label>
-                        
-                     
+                        </label>
+
+
                       </span>
                     </div>
                     <div class="input-group-append">
@@ -602,6 +482,7 @@ input.largerCheckbox {
 
                   </form>
                   @endif
+
                 </div>
               </div>
             </div>
@@ -630,7 +511,8 @@ input.largerCheckbox {
             </div>
             <div class="text-center mt-3 mb-5">
               <h4>{{ $user->name }}</h4>
-              <span class="text-muted"><a >{{ $user->email }}</a></span>
+              <span class="text-muted"><a>{{ $user->email }}</a></span>
+              <p>{{ $user->phone }}</p>
             </div>
 
 
@@ -668,13 +550,16 @@ input.largerCheckbox {
         </div>
       </div>
     </div>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
+    </script>
     <script src="/./js/app.js"></script>
     <script>
+        
       function select(name, id) {
         localStorage.setItem('selected', name);
+        var audio = new Audio('https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3');
+        audio.play();
         location.href = "/select/" + id;
       }
       function gselect(name, id) {
@@ -733,61 +618,14 @@ input.largerCheckbox {
           url: '/notyping/'+id,
         });
       }
+
+      function cut(x)
+      {
+        $("#cut"+x).remove();
+      }
+
     </script>
- <script>
-    function myFunction() {
-    var input, filter, ul, li, a, i, txtValue;
-    input = document.getElementById("myInput");
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("myUL");
-    li = ul.getElementsByTagName("li");
-    for (i = 0; i < li.length; i++) {
-        a = li[i].getElementsByTagName("a")[0];
-        txtValue = a.textContent || a.innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-        } else {
-            li[i].style.display = "none";
-        }
-    }
-}
-</script>
-<script>
-    function myFunction1() {
-    var input, filter, ul, li, a, i, txtValue;
-    input = document.getElementById("myInput1");
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("myUL1");
-    li = ul.getElementsByTagName("li");
-    for (i = 0; i < li.length; i++) {
-        a = li[i].getElementsByTagName("a")[0];
-        txtValue = a.textContent || a.innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-        } else {
-            li[i].style.display = "none";
-        }
-    }
-}
-</script>
-<script>
-    function myFunction2() {
-    var input, filter, ul, li, a, i, txtValue;
-    input = document.getElementById("myInput2");
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("myUL2");
-    li = ul.getElementsByTagName("li");
-    for (i = 0; i < li.length; i++) {
-        a = li[i].getElementsByTagName("a")[0];
-        txtValue = a.textContent || a.innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-        } else {
-            li[i].style.display = "none";
-        }
-    }
-}
-</script>
+
     <script src="/assets/vendor/jquery/jquery-3.5.1.min.js"></script>
     <script src="/assets/vendor/bootstrap.bundle.min.js"></script>
 

@@ -1,7 +1,6 @@
 <?php
   
 use Illuminate\Support\Facades\Route;  
-use Illuminate\Support\Facades\Artisan;  
 use App\Http\Controllers\UserController;
 use App\Events\handler;
 use App\Models\message;
@@ -38,13 +37,9 @@ Route::get('msgdel/{id}', [UserController::class, "msgdel"]);
 Route::view('/test', 'test');
 Route::get('typing/{id}', [UserController::class, "typing"]);
 Route::get('notyping/{id}', [UserController::class, "notyping"]);
-Route::post('groupinsert', [UserController::class, "groupchat"]);
-Route::post('addnote', [UserController::class, "addnotes"]);
-Route::post('deletenote', [UserController::class, "deletenotes"]);
-Route::get("/link", function()
-{
-    return Artisan::call("storage:link");
-});
+
+Route::get('emoji', [UserController::class, "emoji"]);
+
 
 
 

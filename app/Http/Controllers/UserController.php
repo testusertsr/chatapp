@@ -17,10 +17,11 @@ use App\Events\ghandler;
 use App\Events\Status;
 use App\Events\msgdel; 
 use App\Models\message;
+use App\Models\emoji;
 use App\Models\grouppeople;
 use App\Models\groups;
 use App\Models\groupchat;
-use App\Models\notes;
+use Carbon\Carbon;
 
 Use Alert;
 
@@ -51,20 +52,10 @@ class UserController extends Controller
      *
      * @return response()
      */
-   
     public function postLogin(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-            'password' => 'required',
-        ]);
-        
-        $email = $request->input('email');
-        $password = $request->input('password');
-        $ch = User::where('email', $email)->first();
-        
         $ch = User::where('email','=',$request->email)->get()->first();
-        if ($ch && Hash::check($password, $ch->password))
+        if(Hash::check($request->password, $ch->password))
         {
             $request->session()->put('user', $ch->name);
             $request->session()->put('user_id', $ch->id);
@@ -73,11 +64,6 @@ class UserController extends Controller
             $ch->save();
             return redirect("/home");
         }
-        session()->flash('message','Oppes! You have entered invalid credentials');
-        return redirect("/");
-        
-        
-        
         // $request->validate([
         //     'email' => 'required',
         //     'password' => 'required',
@@ -91,6 +77,7 @@ class UserController extends Controller
         // return redirect("/");
         
     }
+    
       
     /**
      * Write code on Method
@@ -121,9 +108,8 @@ class UserController extends Controller
     public function home()
     {
         $data = User::all();
-        $profile = User::find(request()->session()->get('user_id'));
-        $notes = notes::all();
-        return view('chat', ['data' => $data, 'profile' => $profile, 'notes' => $notes]);
+
+        return view('chat', ['data' => $data]);
 
     }
 
@@ -131,7 +117,6 @@ class UserController extends Controller
     {
         $selecteduser = User::find($id);
         $data = User::all();
-        $profile = User::find(request()->session()->get('user_id'));
         $select = User::find(request()->session()->get('user_id'));
         $select->selected = $id;
         $select->save();
@@ -143,15 +128,15 @@ class UserController extends Controller
 
         $seen = message::where("sender",'=',$selecteduser->name)->where("recevier",'=',request()->session()->get('user'))->update(['seen'=>1]);
         event(new Tick($id, request()->session()->get('user_id')));
-        return view('chat', ['data' => $data, 'user' => $selecteduser, 'double'=>$double, 'profile' => $profile]);
+        return view('chat', ['data' => $data, 'user' => $selecteduser, 'double'=>$double]);
     }
 
     public function gselect($id)
     {
         $selecteduser = groups::find($id);
         $data = User::all();
-        $profile = User::find(request()->session()->get('user_id'));
-        return view('chat', ['data' => $data, 'user' => $selecteduser,'group'=>'on', 'profile' => $profile]);
+
+        return view('chat', ['data' => $data, 'user' => $selecteduser,'group'=>'on']);
     }
 
 
@@ -189,18 +174,17 @@ class UserController extends Controller
           'password_confirmation' => 'required',
         ]);
 
-        $user = User::find($request->session()->get('user_id'));
+        $user = Auth::user();
 
         if (!Hash::check($request->current_password, $user->password)) {
-            Alert::error('Oops', 'Current Password does not Match');
-            // session()->flash('message','Current Password does not Match');
-            return redirect()->back();
+            session()->flash('message','Current Password does not Match');
+            return back();
         }
 
         $user->password = Hash::make($request->password);
         $user->save();
-        Alert::success('Success', 'Password Changed Successfully');
-        return redirect()->back();
+        session()->flash('message','Password Changed Successfully');
+        return back();
     }
 
     public function upload(Request $request)
@@ -212,36 +196,23 @@ class UserController extends Controller
             $update = User::find($request->session()->get('user_id'));
             $update->image=$filename;
             $update->save();
-            Alert::success('Success', 'Profile Picture Updated Successfully');
-            return redirect()->back();
         }
-        else{
-             Alert::error('Oops', 'No Changes were made');
-             return redirect()->back();
-        }
-       
+        Alert::success('Success', 'Profile Picture Updated Successfully');
+        return redirect()->back();
     }
     
-     public function update(Request $request)
+    public function update(Request $request)
     {
-        $user = User::find($request->session()->get('user_id'));
-        if($user->name == $request[ 'name' ] && $user->email == $request[ 'email' ]) {
-            Alert::error('Oops', 'No Changes were made');
-             return redirect()->back();  
-        }
-        else{
-             $request->validate([
+        $request->validate([
             'name' =>'required|min:4|string|max:255',
             'email'=>'required|email|string|max:255|unique:users'
-             ]);
-        
-            $user->name = $request['name'];
-            $user->email = $request['email'];
-            $user->save();
-            Alert::success('Success', 'Account Settings Updated Successfully');
-            return redirect()->back();  
-        }
-       
+        ]);
+        $user = User::find($request->session()->get('user_id'));
+        $user->name = $request['name'];
+        $user->email = $request['email'];
+        $user->save();
+        Alert::success('Success', 'Account Settings Updated Successfully');
+        return redirect()->back();
 
     }
     /**
@@ -262,42 +233,6 @@ class UserController extends Controller
         return Redirect('/')->withSuccess('Logout Successfull');
     }
 
-    public function groupchat()
-    {
-        $add = new groups();
-        $add->name = request()->gname;
-        $add->save();
-
-        $users = User::all();
-        foreach ($users as $user) {
-            $temp = $user->id;
-        if(isset(request()->$temp)){  
-            $addcont = new grouppeople();
-            $addcont->group_id = $add->id;
-            $addcont->user_id = $temp;
-            $addcont->save();
-    }
-        } 
-        Alert::success('Success', 'Group Created Successfully'); 
-        return redirect()->back();
-    }
-
-    public function addnotes(){
-        $add = new notes();
-        $add->notes = request()->note;
-        $add->save();
-
-        Alert::success('Success', 'Notes Added Successfully'); 
-        return redirect()->back();
-    }
-
-    public function deletenotes(Request $request){
-        $user = notes::find($request->delete);
-        $user->delete(); 
-        Alert::success('Success', 'Note Deleted Successfully'); 
-        return redirect()->back();
-    }
-
     public function chat()
     {
         if(isset(request()->gid))
@@ -307,7 +242,7 @@ class UserController extends Controller
             $add->group_id = request()->gid;
             $add->message = request()->gmsg;
             $add->save();
-            return event(new ghandler(request()->sname, request()->gmsg, $add->id, request()->gname, $add->created_at->format('Y-m-d h:i:s A')));
+            return event(new ghandler(request()->sname, request()->gmsg, $add->id, request()->gname, $add->created_at->format('Y-m-d h:i:s a')));
         }
         else
         {
@@ -352,8 +287,8 @@ class UserController extends Controller
         $add->seen = 1;
 
         $add->save();
-        $time = date('d-m-Y | h:i:s A');
-        return event(new handler(request()->name, $msg, request()->reciver, $time, $add->id,request()->dd));
+        $time = date('d-m-Y h:i:s a');
+        return event(new handler(request()->name, $msg, request()->reciver, Carbon::parse($time)->diffForHumans(), $add->id,request()->dd, request()->session()->get('user_id')));
         }
     }
 public function msgdel($id)
@@ -372,5 +307,12 @@ public function notyping($id)
 {
     event(new Status('notyping', $id));
 }
+
+function emoji()
+{
+      $data = emoji::all();
+      return view('emoji',['data'=>$data]);
+}
+
 }
 

@@ -20,13 +20,14 @@ class handler implements ShouldBroadcast
     public $time;
     public $id;
     public $dd;
+    public $user_id;
     
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($name, $msg, $reciver, $time, $id, $dd)
+    public function __construct($name, $msg, $reciver, $time, $id, $dd, $user_id)
     {
         $this->sender = $name;
         $this->msg = $msg;
@@ -34,6 +35,7 @@ class handler implements ShouldBroadcast
         $this->time = $time;
         $this->id = $id;
         $this->dd = $dd;
+        $this->user_id = $user_id;
     }
 
     /**
